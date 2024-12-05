@@ -23,9 +23,10 @@ def pull():
     Pulls data
     """
     puller = Puller()
-    hot_posts = puller.pull_hot_posts('DestinyTheGame', 10)
-    for idx, post in enumerate(hot_posts):
-        print(f"{idx+1}: {post.title}")
+    comments = puller.pull_hot_comments('DestinyTheGame', 1)
+    for comment in comments:
+        print(f"===== Score: {comment['score']}, Sentiment: {comment['positivity']:.2f} =====")
+        print(comment['body'])
 
 
 if __name__ == '__main__':
