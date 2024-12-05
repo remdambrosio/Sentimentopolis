@@ -16,10 +16,9 @@ class Puller:
                                 user_agent=config.USER_AGENT)
 
 
-    def pull_hot_posts(self, subreddit):
+    def pull_hot_posts(self, subreddit, num):
         """
-        Pulls and displays top 10 posts on "hot" feed of input subreddit
+        Pulls and displays top posts on "hot" feed of input subreddit
         """
-        hot_posts = self.reddit.subreddit(subreddit).hot(limit=10)
-        for idx, submission in enumerate(hot_posts):
-            print(f"{idx+1}: {submission.title}")
+        hot_posts = self.reddit.subreddit(subreddit).hot(limit=num)
+        return hot_posts
