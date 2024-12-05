@@ -2,13 +2,13 @@
 puller.py
 Defines class to handle interactions with PRAW (Python Reddit API Wrapper)
 """
-
 import praw
 import config
 import pandas as pd
 import re
 import emoji
 from textblob import TextBlob
+
 
 class Puller:
     """
@@ -38,12 +38,11 @@ class Puller:
             post.comments.replace_more(limit=None)              # expanded + flattened comment trees
             for comment in post.comments.list():
                 body = self.clean_text(comment.body)
-                score = comment.score                           # upvotes - downvotes
-                positivity = self.text_positivity(body)
+                blob = TextBlob(body).correct()
                 comments.append({
                     'body': body,
-                    'score': score,
-                    'positivity': positivity
+                    'score': comment.score,
+                    'polarity': blob.sentiment.polarity,
                 })
         return comments
 
@@ -60,12 +59,3 @@ class Puller:
         text = re.sub(r'\s+', ' ', text).strip()                # whitespace
         text = text.lower()                                     # case
         return text
-
-
-    def text_positivity(self, text):
-        """
-        Performs sentiment analysis on text
-        """
-        blobbed = TextBlob(text)
-        positivity = blobbed.sentiment.polarity
-        return positivity

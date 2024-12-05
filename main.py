@@ -2,9 +2,9 @@
 main.py
 Main function for Sentimentopolis
 """
-
 import argparse
 from puller import Puller
+
 
 def main():
     """
@@ -25,7 +25,7 @@ def pull():
     puller = Puller()
     comments = puller.pull_hot_comments('DestinyTheGame', 1)
     for comment in comments:
-        print(f"===== Score: {comment['score']}, Sentiment: {comment['positivity']:.2f} =====")
+        print(f"===== Score: {comment['score']}, Sentiment: {comment['polarity']:.2f} =====")
         print(comment['body'])
 
 
