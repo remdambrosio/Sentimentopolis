@@ -31,7 +31,7 @@ class Puller:
 
     def get_comments(self, posts):
         """
-        Pulls comments from input posts
+        Gets comments, score, and polarity from a list of posts
         """
         comments = []
         for post in posts:
