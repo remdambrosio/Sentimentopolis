@@ -38,11 +38,10 @@ class Puller:
             post.comments.replace_more(limit=None)              # expanded + flattened comment trees
             for comment in post.comments.list():
                 body = self.clean_text(comment.body)
-                blob = TextBlob(body).correct()
                 comments.append({
                     'body': body,
                     'score': comment.score,
-                    'polarity': blob.sentiment.polarity,
+                    'polarity': TextBlob(body).correct().sentiment.polarity,
                 })
         return comments
 
