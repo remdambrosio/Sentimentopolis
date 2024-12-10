@@ -2,11 +2,9 @@
 puller.py
 Defines class to handle interactions with PRAW (Python Reddit API Wrapper)
 """
+import json
 import praw
 import config
-import pandas as pd
-import re
-import emoji
 from textblob import TextBlob
 
 
@@ -18,43 +16,63 @@ class Puller:
         self.reddit = praw.Reddit(client_id=config.CLIENT_ID,
                                 client_secret=config.CLIENT_SECRET,
                                 user_agent=config.USER_AGENT)
+        self.data = []
 
 
-    def pull_hot_comments(self, subreddit, num):
-        """
-        Pulls comments from top num posts on "hot" feed of input subreddit
-        """
-        hot_posts = self.reddit.subreddit(subreddit).hot(limit=num)
-        hot_comments = self.get_comments(hot_posts)
-        return hot_comments
+    # MAIN METHODS =========================
 
 
-    def get_comments(self, posts):
+    def pull_hot_posts(self, subreddit_name, count):
         """
-        Gets comments, score, and polarity from a list of posts
+        Adds posts from "hot" feed of input subreddit
         """
-        comments = []
-        for post in posts:
-            post.comments.replace_more(limit=None)              # expanded + flattened comment trees
-            for comment in post.comments.list():
-                body = self.clean_text(comment.body)
-                comments.append({
-                    'body': body,
-                    'score': comment.score,
-                    'polarity': TextBlob(body).correct().sentiment.polarity,
+        subreddit = self.reddit.subreddit(subreddit_name)
+        hot_post_list = subreddit.hot(limit=count)
+        expanded_list = self.expand_post_list(hot_post_list)
+        self.data = self.data + expanded_list
+        return
+
+
+    # HELPER METHODS =======================
+
+
+    def expand_post_list(self, post_list):
+        """
+        Flattens list of PRAW post objects into dict of posts + their comments
+        """
+        expanded_list = []
+        for post in post_list:
+            post_data = {                                       # data for post itself
+                'id': post.id,
+                'title': post.title,
+                'selftext': post.selftext,
+                'url': post.url,
+                'author': str(post.author),
+                'created_utc': post.created_utc,
+                'score': post.score,
+                'comments': []
+            }
+            post.comments.replace_more(limit=None)              # expand + flatten comment tree
+            comments = post.comments.list()
+            for comment in comments:
+                post_data['comments'].append({
+                    'id': comment.id,
+                    'author': str(comment.author),
+                    'body': comment.body,
+                    'created_utc': comment.created_utc,
+                    'score': comment.score
                 })
-        return comments
+            expanded_list.append(post_data)
+        return expanded_list
 
 
-    def clean_text(self, text):
+    # I/O METHODS ==========================
+
+
+    def write_posts_json(self, path):
         """
-        Cleans unwanted data from comment text
+        Writes data to json
         """
-        text = emoji.demojize(text)                             # emojis to words
-        text = re.sub(r'http[s]?://\S+', '', text)              # urls
-        text = re.sub(r'/u/\w+|u/\w+', '', text)                # username mentions
-        text = re.sub(r'<[^>]+>', '', text)                     # html tags
-        text = re.sub(r'[^a-zA-Z0-9\s!?\'.,]', ' ', text)       # special characters
-        text = re.sub(r'\s+', ' ', text).strip()                # whitespace
-        text = text.lower()                                     # case
-        return text
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(self.data, f, indent=4)
+        return
