@@ -29,7 +29,7 @@ def pull():
     """
     puller = Puller()
     print('Pulling data...')
-    puller.pull_posts('DestinyTheGame', pull_type='top', post_count=10, time_frame='month')
+    puller.pull_posts('DestinyTheGame', pull_type='top', post_count=1000, time_frame='month')
     print('...Data pulled...')
     puller.write_posts_json('data/input/posts.json')
     print('...Data written to file.')

@@ -34,8 +34,11 @@ class Puller:
             post_list = subreddit.top(limit=post_count, time_filter=time_frame)
         elif pull_type == 'hot':
             post_list = subreddit.hot(limit=post_count, time_filter=time_frame)
+        print(f'...Pulled {post_count} posts...')
 
         expanded_list = self.expand_post_list(post_list)
+        print('...Expanded post comments...')
+
         self.data = self.data + expanded_list
         return
 
@@ -45,7 +48,7 @@ class Puller:
 
     def expand_post_list(self, post_list):
         """
-        Flattens list of PRAW post objects into dict of posts + their comments
+        Flattens list of PRAW post objects into list of posts + their comments
         """
         expanded_list = []
         for post in post_list:
@@ -61,7 +64,7 @@ class Puller:
             }
 
             post.comments.replace_more(limit=0)                 # trim "load more comments"
-            comments = post.comments.list()
+            comments = post.comments.list()                     # data for comments
             for comment in comments:
                 post_data['comments'].append({
                     'id': comment.id,
