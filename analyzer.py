@@ -17,7 +17,6 @@ class Analyzer:
     def __init__(self, in_path):
         self.data = self.read_data_json(in_path)
         self.results = []
-        self.report = []
 
 
     # MAIN METHODS =========================

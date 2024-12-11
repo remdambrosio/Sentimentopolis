@@ -37,7 +37,7 @@ class Puller:
         print(f'...Pulled {post_count} posts...')
 
         expanded_list = self.expand_post_list(post_list)
-        print('...Expanded post comments...')
+        print('...Pulled comments from posts...')
 
         self.data = self.data + expanded_list
         return
