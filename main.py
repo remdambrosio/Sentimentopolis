@@ -29,7 +29,7 @@ def pull():
     """
     puller = Puller()
     print('Pulling data...')
-    puller.pull_hot_posts('DestinyTheGame', 3)
+    puller.pull_posts('DestinyTheGame', pull_type='top', post_count=10, time_frame='month')
     print('...Data pulled...')
     puller.write_posts_json('data/input/posts.json')
     print('...Data written to file.')
@@ -42,10 +42,10 @@ def analyze():
     """
     print('Analyzing data...')
     analyzer = Analyzer('data/input/posts.json')
-    analyzer.comment_sentiment()
-    print('...Data analyzed...')
-    analyzer.write_analysis_json('data/output/analysis.json')
-    print('...Analysis written to file.')
+    analyzer.trajectory_analysis()
+    print('...Sentiment gathered...')
+    analyzer.write_results_json('data/output/results.json')
+    print('...Results written to file.')
     return
 
 

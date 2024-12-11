@@ -5,7 +5,6 @@ Defines class to handle interactions with PRAW (Python Reddit API Wrapper)
 import json
 import praw
 import config
-from textblob import TextBlob
 
 
 class Puller:
@@ -22,13 +21,21 @@ class Puller:
     # MAIN METHODS =========================
 
 
-    def pull_hot_posts(self, subreddit_name, count):
+    def pull_posts(self, subreddit_name, pull_type='new', post_count=1000, time_frame='all'):
         """
-        Adds posts from "hot" feed of input subreddit
+        Adds posts from a subreddit to data
         """
         subreddit = self.reddit.subreddit(subreddit_name)
-        hot_post_list = subreddit.hot(limit=count)
-        expanded_list = self.expand_post_list(hot_post_list)
+
+        post_list = []
+        if pull_type == 'new':
+            post_list = subreddit.new(limit=post_count)
+        elif pull_type == 'top':
+            post_list = subreddit.top(limit=post_count, time_filter=time_frame)
+        elif pull_type == 'hot':
+            post_list = subreddit.hot(limit=post_count, time_filter=time_frame)
+
+        expanded_list = self.expand_post_list(post_list)
         self.data = self.data + expanded_list
         return
 
@@ -52,7 +59,8 @@ class Puller:
                 'score': post.score,
                 'comments': []
             }
-            post.comments.replace_more(limit=None)              # expand + flatten comment tree
+
+            post.comments.replace_more(limit=0)                 # trim "load more comments"
             comments = post.comments.list()
             for comment in comments:
                 post_data['comments'].append({
@@ -62,6 +70,7 @@ class Puller:
                     'created_utc': comment.created_utc,
                     'score': comment.score
                 })
+
             expanded_list.append(post_data)
         return expanded_list
 

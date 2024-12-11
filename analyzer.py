@@ -3,8 +3,10 @@ analyzer.py
 Defines class to handle preprocessing and sentiment analysis
 """
 import re
-import emoji
 import json
+from datetime import datetime
+
+import emoji
 from textblob import TextBlob
 
 
@@ -14,39 +16,80 @@ class Analyzer:
     """
     def __init__(self, in_path):
         self.data = self.read_data_json(in_path)
-        self.analysis = []
+        self.results = []
         self.report = []
 
 
     # MAIN METHODS =========================
 
 
-    def comment_sentiment(self):
+    def sentiment_analysis(self, score_threshold=1):
         """
         Performs sentiment analysis on comments
         """
-        analysis = []
-        for post in self.data:
+        results = []
+        length = len(self.data)
+        for i, post in enumerate(self.data):
             for comment in post['comments']:
-                body = self.clean_text(comment['body'])
-                analysis.append({
-                    'body': body,
-                    'score': comment['score'],
-                    'sentiment': self.get_sentiment(body),
-                })
-        self.analysis = analysis
+                score = comment['score']
+                if score > score_threshold:
+                    body = comment['body']
+                    created_utc = comment['created_utc']
+                    sentiment = self.textblob_sentiment(body)
+                    results.append({
+                        'body': body,
+                        'score': score,
+                        'created_utc': created_utc,
+                        'sentiment': sentiment,
+                    })
+            print(f'...Analyzed post {i+1} of {length}...')
+        self.results = results
+        return
+
+
+    def trajectory_analysis(self, score_threshold=1):
+        """
+        Determines whether positivity is rising or falling
+        """
+        trajectory = []
+        daily_sentiment = {}
+        length = len(self.data)
+        for i, post in enumerate(self.data):
+            for comment in post['comments']:
+                if comment['score'] > score_threshold:
+                    date = datetime.fromtimestamp(comment['created_utc']).strftime('%Y-%m-%d')
+                    comment_sentiment = self.textblob_sentiment(comment['body'])
+                    if date not in daily_sentiment:
+                        daily_sentiment[date] = {
+                            'total': comment_sentiment,
+                            'count': 1
+                        }
+                    else:
+                        daily_sentiment[date]['total'] += comment_sentiment
+                        daily_sentiment[date]['count'] += 1
+            print(f'...Analyzed post {i+1} of {length}...')
+
+        sorted_days = sorted(daily_sentiment.keys(), key=lambda x: datetime.strptime(x, '%Y-%m-%d'))
+
+        for date in sorted_days:
+            total = daily_sentiment[date]['total']
+            count = daily_sentiment[date]['count']
+            mean = total / count
+            trajectory.append((date, mean))
+
+        self.results = trajectory
         return
 
 
     # HELPER METHODS =======================
 
 
-    def get_sentiment(self, text):
+    def textblob_sentiment(self, text):
         """
-        Performs sentiment analysis on string
+        Performs sentiment analysis on string using TextBlob
         """
         clean_text = self.clean_text(text)
-        polarity = TextBlob(clean_text).correct().sentiment
+        polarity = TextBlob(clean_text).correct().sentiment.polarity
         return polarity
 
 
@@ -76,10 +119,10 @@ class Analyzer:
         return data
 
 
-    def write_analysis_json(self, out_path):
+    def write_results_json(self, out_path):
         """
-        Writes analysis to json
+        Writes sentiment analysis results to json
         """
         with open(out_path, 'w', encoding='utf-8') as f:
-            json.dump(self.analysis, f, indent=4)
+            json.dump(self.results, f, indent=4)
         return
