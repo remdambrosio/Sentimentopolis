@@ -24,7 +24,7 @@ class Analyzer:
 
     def sentiment_analysis(self, score_threshold=1):
         """
-        Performs sentiment analysis on comments
+        Gets basic info and polarity for popular comments
         """
         results = []
         length = len(self.data)
@@ -34,7 +34,7 @@ class Analyzer:
                 if score > score_threshold:
                     body = comment['body']
                     created_utc = comment['created_utc']
-                    sentiment = self.textblob_sentiment(body)
+                    sentiment = self.get_sentiment(body)
                     results.append({
                         'body': body,
                         'score': score,
@@ -48,17 +48,17 @@ class Analyzer:
 
     def trajectory_analysis(self, score_threshold=1):
         """
-        Determines whether positivity is rising or falling
+        Gets mean popular comment polarity by day
         """
         trajectory = []
         daily_sentiment = {}
         length = len(self.data)
-        for i, post in enumerate(self.data):
+        for i, post in enumerate(self.data):                # get polarity of all popular comments
             for comment in post['comments']:
                 if comment['score'] > score_threshold:
                     date = datetime.fromtimestamp(comment['created_utc']).strftime('%Y-%m-%d')
-                    comment_sentiment = self.textblob_sentiment(comment['body'])
-                    if date not in daily_sentiment:
+                    comment_sentiment = self.get_sentiment(comment['body'])
+                    if date not in daily_sentiment:         # aggregate by day
                         daily_sentiment[date] = {
                             'total': comment_sentiment,
                             'count': 1
@@ -70,7 +70,7 @@ class Analyzer:
 
         sorted_days = sorted(daily_sentiment.keys(), key=lambda x: datetime.strptime(x, '%Y-%m-%d'))
 
-        for date in sorted_days:
+        for date in sorted_days:                            # mean polarity for each day
             total = daily_sentiment[date]['total']
             count = daily_sentiment[date]['count']
             mean = total / count
@@ -83,12 +83,20 @@ class Analyzer:
     # HELPER METHODS =======================
 
 
-    def textblob_sentiment(self, text):
+    def get_sentiment(self, text):
         """
-        Performs sentiment analysis on string using TextBlob
+        Prepares text and gets sentiment
         """
-        clean_text = self.clean_text(text)
-        polarity = TextBlob(clean_text).correct().sentiment.polarity
+        text = self.clean_text(text)
+        sentiment = self.textblob_polarity(text)
+        return sentiment
+
+
+    def textblob_polarity(self, text):
+        """
+        Gets string polarity using TextBlob
+        """
+        polarity = TextBlob(text).correct().sentiment.polarity
         return polarity
 
 

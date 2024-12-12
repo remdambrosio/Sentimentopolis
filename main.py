@@ -14,7 +14,7 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Does PRAW stuff')
     parser.add_argument('-pu', '--pull', action='store_true', help='pull new data from PRAW')
-    parser.add_argument('-an', '--analyze', action='store_true', help='analyzes data from file')
+    parser.add_argument('-an', '--analyze', action='store_true', help='analyze data from file')
     parser.add_argument('-re', '--report', action='store_true', help='write report on results')
     args = parser.parse_args()
 
