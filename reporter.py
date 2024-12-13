@@ -23,16 +23,16 @@ class Reporter:
         """
         Generates report on trajectory results
         """
+        start_date = self.results[0][0]
         df = pd.DataFrame(self.results, columns=['Date', 'Polarity'])
         df['Date'] = pd.to_datetime(df['Date'])
         df['DateNumeric'] = (df['Date'] - df['Date'].min()).dt.days
-        df = df.sort_values(by='DateNumeric')
 
         plt.figure(figsize=(10, 6))
         sns.regplot(data=df, x='DateNumeric', y='Polarity', scatter=True, fit_reg=True,
                     marker='o', color='blue', line_kws={'color': 'red'}, ci=None)
         plt.title('Popular Comment Polarity', fontsize=16)
-        plt.xlabel('Days', fontsize=12)
+        plt.xlabel(f'Days from {start_date}', fontsize=12)
         plt.ylabel('Polarity', fontsize=12)
         plt.grid(True)
         plt.tight_layout()

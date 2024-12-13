@@ -27,17 +27,15 @@ class Puller:
         """
         subreddit = self.reddit.subreddit(subreddit_name)
 
-        post_list = []
         if pull_type == 'new':
-            post_list = subreddit.new(limit=post_count)
+            posts = subreddit.new(limit=post_count)
         elif pull_type == 'top':
-            post_list = subreddit.top(limit=post_count, time_filter=time_frame)
+            posts = subreddit.top(limit=post_count, time_filter=time_frame)
         elif pull_type == 'hot':
-            post_list = subreddit.hot(limit=post_count, time_filter=time_frame)
-        print(f'...Pulled {post_count} posts...')
+            posts = subreddit.hot(limit=post_count, time_filter=time_frame)
+        print(f'...Identified {post_count} posts via PRAW...')
 
-        expanded_list = self.expand_post_list(post_list)
-        print('...Pulled comments from posts...')
+        expanded_list = self.expand_post_list(posts)
 
         self.data = self.data + expanded_list
         return
@@ -46,12 +44,14 @@ class Puller:
     # HELPER METHODS =======================
 
 
-    def expand_post_list(self, post_list):
+    def expand_post_list(self, posts):
         """
         Flattens list of PRAW post objects into list of posts + their comments
         """
+        post_list = list(posts)
         expanded_list = []
-        for post in post_list:
+        length = len(post_list)
+        for i, post in enumerate(post_list):
             post_data = {                                       # data for post itself
                 'id': post.id,
                 'title': post.title,
@@ -75,6 +75,8 @@ class Puller:
                 })
 
             expanded_list.append(post_data)
+            print(f'...Pulled comments from post {i+1} of {length}...')
+
         return expanded_list
 
 

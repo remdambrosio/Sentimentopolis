@@ -15,16 +15,13 @@ class Analyzer:
     """
     Class to handle interactions with PRAW
     """
-    def __init__(self, in_path, use_gpu=False):
+    def __init__(self, in_path, use_gpu=True):
         self.data = self.read_data_json(in_path)
+        model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
         if use_gpu:
-            try:
-                self.sentiment_analyzer = pipeline('sentiment-analysis', truncation=True, device=0)
-            except Exception as e:
-                print("Couldn't find GPU, using CPU")
-                self.sentiment_analyzer = pipeline('sentiment-analysis', truncation=True, device=-1)
+            self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=0)
         else:
-            self.sentiment_analyzer = pipeline('sentiment-analysis', device=-1)
+            self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=-1)
 
 
     # MAIN METHODS =========================
