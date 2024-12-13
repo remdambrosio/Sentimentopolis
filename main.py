@@ -34,7 +34,7 @@ def pull():
     """
     puller = Puller()
     print('Pulling data...')
-    puller.pull_posts('DestinyTheGame', pull_type='top', post_count=100, time_frame='year')
+    puller.pull_posts('DestinyTheGame', pull_type='top', post_count=10, time_frame='month')
     print('...Data pulled...')
     puller.write_posts_json('data/raw/posts.json')
     print('...Data written to file.')
@@ -46,7 +46,7 @@ def analyze():
     Analyzes data
     """
     print('Analyzing data...')
-    analyzer = Analyzer('data/raw/posts.json')
+    analyzer = Analyzer(in_path='data/raw/posts.json', use_gpu=True)
     analyzer.trajectory_analysis()
     print('...Sentiment gathered...')
     analyzer.write_results_json('data/processed/results.json')
@@ -59,7 +59,7 @@ def report():
     Reports results
     """
     print('Reporting results...')
-    reporter = Reporter('data/processed/results.json')
+    reporter = Reporter(in_path='data/processed/results.json')
     reporter.visualize_trajectory()
     print('...Results reported.')
     return
