@@ -16,9 +16,10 @@ class Analyzer:
     """
     def __init__(self, in_path, use_gpu=True):
         self.data = self.read_data_json(in_path)
-        model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
         device = 0 if use_gpu else -1
-        self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=device)
+        model_name = 'cardiffnlp/twitter-roberta-base-sentiment'
+        self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, device=device,
+                                           truncation=True, max_length=511)     # only some models require max_length
         self.results = []
 
 
@@ -29,7 +30,7 @@ class Analyzer:
         """
         Gets mean comment polarity by day, using only comments with score above threshold
         """
-        daily_comments = {}                                 # date : list of comments
+        daily_comments = {}                                 # {date:[comments,on,that,day]}
         length = len(self.data)
         for i, post in enumerate(self.data):                # iterate through all posts + their comments
             for comment in post['comments']:
@@ -70,20 +71,15 @@ class Analyzer:
         """
         Gets average polarity of a list of strings using Hugging Face
         """
+        label_to_polarity = {"LABEL_0": -1, "LABEL_1": 0, "LABEL_2": 1}
         string_sentiments = self.sentiment_analyzer(text_batch)
         total = 0
         for entry in string_sentiments:
-            total += entry['score']
+            polarity_direction = label_to_polarity[entry['label']]
+            polarity_score = entry['score']
+            total += polarity_direction * polarity_score
         avg_polarity = total / len(string_sentiments)
         return avg_polarity
-
-
-    # def textblob_polarity(self, text):
-    #     """
-    #     Gets string polarity using TextBlob
-    #     """
-    #     polarity = TextBlob(text).correct().sentiment.polarity
-    #     return polarity
 
 
     def clean_text(self, text):
