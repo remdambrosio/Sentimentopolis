@@ -75,9 +75,8 @@ class Analyzer:
         string_sentiments = self.sentiment_analyzer(text_batch)
         total = 0
         for entry in string_sentiments:
-            polarity_direction = label_to_polarity[entry['label']]
-            polarity_score = entry['score']
-            total += polarity_direction * polarity_score
+            polarity = label_to_polarity[entry['label']]
+            total += polarity
         avg_polarity = total / len(string_sentiments)
         return avg_polarity
 
