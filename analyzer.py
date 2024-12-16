@@ -7,7 +7,6 @@ import json
 from datetime import datetime
 
 import emoji
-from textblob import TextBlob
 from transformers import pipeline
 
 
@@ -18,43 +17,17 @@ class Analyzer:
     def __init__(self, in_path, use_gpu=True):
         self.data = self.read_data_json(in_path)
         model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
-        if use_gpu:
-            self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=0)
-        else:
-            self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=-1)
+        device = 0 if use_gpu else -1
+        self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=device)
+        self.results = []
 
 
     # MAIN METHODS =========================
 
 
-    # TODO: rebuild for efficient batch processing
-    def sentiment_analysis(self, score_threshold=1):
-        """
-        Gets basic info and polarity for popular comments
-        """
-        results = []
-        length = len(self.data)
-        for i, post in enumerate(self.data):
-            for comment in post['comments']:
-                score = comment['score']
-                if score > score_threshold:
-                    body = self.clean_text(comment['body'])
-                    created_utc = comment['created_utc']
-                    sentiment = self.get_sentiment(body)
-                    results.append({
-                        'body': body,
-                        'score': score,
-                        'created_utc': created_utc,
-                        'sentiment': sentiment,
-                    })
-            print(f'...Analyzed post {i+1} of {length}...')
-        self.results = results
-        return
-
-
     def trajectory_analysis(self, score_threshold=1):
         """
-        Gets mean popular comment polarity by day
+        Gets mean comment polarity by day, using only comments with score above threshold
         """
         daily_comments = {}                                 # date : list of comments
         length = len(self.data)
@@ -78,7 +51,7 @@ class Analyzer:
             trajectory.append((date, polarity))
             print(f'...Analyzed date {i+1} of {length}...')
 
-        self.results = trajectory
+        self.results += trajectory
         return
 
 
