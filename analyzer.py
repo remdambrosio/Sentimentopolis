@@ -7,7 +7,6 @@ import json
 from datetime import datetime
 
 import emoji
-from textblob import TextBlob
 from transformers import pipeline
 
 
@@ -17,46 +16,21 @@ class Analyzer:
     """
     def __init__(self, in_path, use_gpu=True):
         self.data = self.read_data_json(in_path)
-        model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
-        if use_gpu:
-            self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=0)
-        else:
-            self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, truncation=True, device=-1)
+        device = 0 if use_gpu else -1
+        model_name = 'cardiffnlp/twitter-roberta-base-sentiment'
+        self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, device=device,
+                                           truncation=True, max_length=511)     # only some models require max_length
+        self.results = []
 
 
     # MAIN METHODS =========================
 
 
-    # TODO: rebuild for efficient batch processing
-    def sentiment_analysis(self, score_threshold=1):
-        """
-        Gets basic info and polarity for popular comments
-        """
-        results = []
-        length = len(self.data)
-        for i, post in enumerate(self.data):
-            for comment in post['comments']:
-                score = comment['score']
-                if score > score_threshold:
-                    body = self.clean_text(comment['body'])
-                    created_utc = comment['created_utc']
-                    sentiment = self.get_sentiment(body)
-                    results.append({
-                        'body': body,
-                        'score': score,
-                        'created_utc': created_utc,
-                        'sentiment': sentiment,
-                    })
-            print(f'...Analyzed post {i+1} of {length}...')
-        self.results = results
-        return
-
-
     def trajectory_analysis(self, score_threshold=1):
         """
-        Gets mean popular comment polarity by day
+        Gets mean comment polarity by day, using only comments with score above threshold
         """
-        daily_comments = {}                                 # date : list of comments
+        daily_comments = {}                                 # {date:[comments,on,that,day]}
         length = len(self.data)
         for i, post in enumerate(self.data):                # iterate through all posts + their comments
             for comment in post['comments']:
@@ -78,7 +52,7 @@ class Analyzer:
             trajectory.append((date, polarity))
             print(f'...Analyzed date {i+1} of {length}...')
 
-        self.results = trajectory
+        self.results += trajectory
         return
 
 
@@ -97,20 +71,14 @@ class Analyzer:
         """
         Gets average polarity of a list of strings using Hugging Face
         """
+        label_to_polarity = {"LABEL_0": -1, "LABEL_1": 0, "LABEL_2": 1}
         string_sentiments = self.sentiment_analyzer(text_batch)
         total = 0
         for entry in string_sentiments:
-            total += entry['score']
+            polarity = label_to_polarity[entry['label']]
+            total += polarity
         avg_polarity = total / len(string_sentiments)
         return avg_polarity
-
-
-    # def textblob_polarity(self, text):
-    #     """
-    #     Gets string polarity using TextBlob
-    #     """
-    #     polarity = TextBlob(text).correct().sentiment.polarity
-    #     return polarity
 
 
     def clean_text(self, text):

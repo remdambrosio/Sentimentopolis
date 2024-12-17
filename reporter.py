@@ -31,9 +31,9 @@ class Reporter:
         plt.figure(figsize=(10, 6))
         sns.regplot(data=df, x='DateNumeric', y='Polarity', scatter=True, fit_reg=True,
                     marker='o', color='blue', line_kws={'color': 'red'}, ci=None)
-        plt.title('Popular Comment Polarity', fontsize=16)
-        plt.xlabel(f'Days from {start_date}', fontsize=12)
-        plt.ylabel('Polarity', fontsize=12)
+        plt.title('Mean Polarity of Popular Comments by Day', fontsize=16)
+        plt.xlabel(f'Days After {start_date}', fontsize=12)
+        plt.ylabel('Mean Polarity', fontsize=12)
         plt.grid(True)
         plt.tight_layout()
         plt.show()
