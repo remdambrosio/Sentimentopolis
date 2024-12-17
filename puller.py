@@ -79,6 +79,32 @@ class Puller:
 
         return expanded_list
 
+    def normalize_unicode(text):
+        replacements = {
+            '\u2018': "'",
+            '\u2019': "'",
+            '\u201C': '"',
+            '\u201D': '"',
+            '\u2010': '-',
+            '\u2011': '-',
+            '\u2012': '-',
+            '\u2013': '-',
+            '\u2014': '-',
+            '\u2026': '...',
+            '\u00A0': ' ',
+            '\u2009': ' ',
+            '\u200A': ' ',
+            '\u200B': '',
+            '\u00B7': '.',
+            '\u2022': '*',
+            '\u201A': ',',
+            '\u2039': '<',
+            '\u203A': '>',
+        }
+        for unicode_char, replacement in replacements.items():
+            text = text.replace(unicode_char, replacement)
+        return text
+
 
     # I/O METHODS ==========================
 
