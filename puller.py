@@ -5,6 +5,9 @@ Defines class to handle interactions with PRAW (Python Reddit API Wrapper)
 import json
 import praw
 import config
+import emoji
+import re
+
 
 
 class Puller:
@@ -42,9 +45,41 @@ class Puller:
 
 
     # HELPER METHODS =======================
-
-
+    
     def expand_post_list(self, posts):
+        
+     
+        """
+        Replaces common flamboyant characters with their common equivalent and cleans text
+        """
+        def normalize_unicode(text):
+            replacements = {
+                '\u2018': "'",
+                '\u2019': "'",
+                '\u201C': '"',
+                '\u201D': '"',
+                '\u2010': '-',
+                '\u2011': '-',
+                '\u2012': '-',
+                '\u2013': '-',
+                '\u2014': '-',
+                '\u2026': '...',
+                '\u00A0': ' ',
+                '\u2009': ' ',
+                '\u200A': ' ',
+                '\u200B': '',
+                '\u00B7': '.',
+                '\u2022': '*',
+                '\u201A': ',',
+                '\u2039': '<',
+                '\u203A': '>',
+            }
+            for unicode_char, replacement in replacements.items():
+                text = text.replace(unicode_char, replacement)
+            text = emoji.demojize(text)                             # emojis to words
+            text = text.lower()                                     # case
+            
+            return text
         """
         Flattens list of PRAW post objects into list of posts + their comments
         """
@@ -54,8 +89,8 @@ class Puller:
         for i, post in enumerate(post_list):
             post_data = {                                       # data for post itself
                 'id': post.id,
-                'title': post.title,
-                'selftext': post.selftext,
+                'title': normalize_unicode(post.title),
+                'selftext': normalize_unicode(post.selftext),
                 'url': post.url,
                 'author': str(post.author),
                 'created_utc': post.created_utc,
@@ -69,7 +104,7 @@ class Puller:
                 post_data['comments'].append({
                     'id': comment.id,
                     'author': str(comment.author),
-                    'body': comment.body,
+                    'body': normalize_unicode(comment.body),
                     'created_utc': comment.created_utc,
                     'score': comment.score
                 })
@@ -79,31 +114,7 @@ class Puller:
 
         return expanded_list
 
-    def normalize_unicode(text):
-        replacements = {
-            '\u2018': "'",
-            '\u2019': "'",
-            '\u201C': '"',
-            '\u201D': '"',
-            '\u2010': '-',
-            '\u2011': '-',
-            '\u2012': '-',
-            '\u2013': '-',
-            '\u2014': '-',
-            '\u2026': '...',
-            '\u00A0': ' ',
-            '\u2009': ' ',
-            '\u200A': ' ',
-            '\u200B': '',
-            '\u00B7': '.',
-            '\u2022': '*',
-            '\u201A': ',',
-            '\u2039': '<',
-            '\u203A': '>',
-        }
-        for unicode_char, replacement in replacements.items():
-            text = text.replace(unicode_char, replacement)
-        return text
+    
 
 
     # I/O METHODS ==========================
