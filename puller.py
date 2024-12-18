@@ -48,7 +48,7 @@ class Puller:
 
     def expand_post_list(self, posts):
         """
-        Flattens list of PRAW post objects into list of posts + their comments
+        Flattens collection of PRAW post objects into list of posts + their comments
         """
         post_list = list(posts)
         expanded_list = []

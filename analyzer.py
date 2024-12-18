@@ -11,21 +11,25 @@ class Analyzer:
     """
     Class to handle interactions with PRAW
     """
-    def __init__(self, in_path, use_gpu=True):
+    def __init__(self, in_path, analysis_attribute, use_gpu):
         self.data = self.read_data_json(in_path)
+        self.analysis_attribute = analysis_attribute
         device = 0 if use_gpu else -1
-        model_name = 'cardiffnlp/twitter-roberta-base-sentiment'
-        self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, device=device,
-                                           truncation=True, max_length=511)     # only some models require max_length
+        if analysis_attribute == 'sentiment':
+            model_name = 'cardiffnlp/twitter-roberta-base-sentiment'
+        elif analysis_attribute == 'nsfwness':
+            model_name = 'eliasalbouzidi/distilbert-nsfw-text-classifier'
+        self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, device=device, truncation=True, max_length=511)
+
         self.results = []
 
 
     # MAIN METHODS =========================
 
 
-    def trajectory_analysis(self, score_threshold=1):
+    def trajectory_analysis(self, score_threshold):
         """
-        Gets mean comment polarity by day, using only comments with score above threshold
+        Analyzes comments by day, using only comments with score (upvotes - downvotes) above threshold
         """
         daily_comments = {}                                 # {date:[comments,on,that,day]}
         length = len(self.data)
@@ -43,10 +47,10 @@ class Analyzer:
 
         trajectory = []
         length = len(sorted_days)
-        for i, date in enumerate(sorted_days):              # batch process polarity for each day
+        for i, date in enumerate(sorted_days):              # batch process sentiment for each day
             if len(daily_comments[date]) > 5:
-                polarity = self.get_sentiment(daily_comments[date])
-                trajectory.append((date, polarity))
+                sentiment = self.get_analysis(text_batch=daily_comments[date])
+                trajectory.append((date, sentiment))
                 print(f'...Analyzed date {i+1} of {length}...')
             else:
                 print(f'...Low comment count on date {i+1} of {length}...')
@@ -58,26 +62,43 @@ class Analyzer:
     # HELPER METHODS =======================
 
 
-    def get_sentiment(self, text_batch):
+    def get_analysis(self, text_batch):
         """
-        Prepares text and gets sentiment (compartmentalized in case I want to swap later)
+        Analyzes text batch based on chosen analysis attribute
         """
-        sentiment = self.transformer_polarity(text_batch)
-        return sentiment
+        if self.analysis_attribute == 'sentiment':
+            analysis_result = self.transformer_sentiment(text_batch)
+        elif self.analysis_attribute == 'nsfwness':
+            analysis_result = self.transformer_nsfwness(text_batch)
+        return analysis_result
     
 
-    def transformer_polarity(self, text_batch):
+    def transformer_sentiment(self, text_batch):
         """
-        Gets average polarity of a list of strings
+        Gets average sentiment of a list of strings
         """
-        label_to_polarity = {"LABEL_0": -1, "LABEL_1": 0, "LABEL_2": 1}
+        label_to_sentiment = {"LABEL_0": -1, "LABEL_1": 0, "LABEL_2": 1}
         string_sentiments = self.sentiment_analyzer(text_batch)
         total = 0
         for entry in string_sentiments:
-            polarity = label_to_polarity[entry['label']]
-            total += polarity
-        avg_polarity = total / len(string_sentiments)
-        return avg_polarity
+            sentiment = label_to_sentiment[entry['label']]
+            total += sentiment
+        avg_sentiment = total / len(string_sentiments)
+        return avg_sentiment
+    
+
+    def transformer_nsfwness(self, text_batch):
+        """
+        Gets average nsfwness of a list of strings
+        """
+        label_to_nsfwness = {"safe": 0, "nsfw": 1}
+        string_sentiments = self.sentiment_analyzer(text_batch)
+        total = 0
+        for entry in string_sentiments:
+            nsfwness = label_to_nsfwness[entry['label']]
+            total += nsfwness
+        avg_nsfwness = total / len(string_sentiments)
+        return avg_nsfwness
 
 
     # I/O METHODS ==========================
@@ -96,6 +117,10 @@ class Analyzer:
         """
         Writes sentiment analysis results to json
         """
+        results_dict = {
+            'analysis_type':self.analysis_attribute,
+            'dates':self.results
+        }
         with open(out_path, 'w', encoding='utf-8') as f:
-            json.dump(self.results, f, indent=4)
+            json.dump(results_dict, f, indent=4)
         return
