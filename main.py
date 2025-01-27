@@ -21,7 +21,8 @@ def main():
     parser.add_argument('-pi', '--pull_time', type=str, help='time frame: day/month/year/all', default='year')
 
     parser.add_argument('-an', '--analyze', action='store_true', help='analyze data from file')
-    parser.add_argument('-aa', '--analyze_attribute', type=str, help='analysis attribute: sentiment, nsfwness', default='sentiment')
+    parser.add_argument('-aa', '--analyze_attribute', type=str, help='analysis attribute: sentiment, nsfwness, saltiness', default='sentiment')
+    parser.add_argument('-if', '--input_file', type=str, help='path to input file for analysis', default='data/raw/posts.json')
 
     parser.add_argument('-re', '--report', action='store_true', help='write report on results')
 
@@ -31,7 +32,7 @@ def main():
         pull(subreddit=args.pull_subreddit, type=args.pull_type, count=args.pull_count, time=args.pull_time)
 
     if args.analyze:
-        analyze(attribute=args.analyze_attribute)
+        analyze(attribute=args.analyze_attribute, in_file=args.input_file)
 
     if args.report:
         report()
@@ -50,12 +51,12 @@ def pull(subreddit, type, count, time):
     return
 
 
-def analyze(attribute):
+def analyze(attribute, in_file='data/raw/posts.json'):
     """
     Analyzes data
     """
     print('Analyzing data...')
-    analyzer = Analyzer(in_path='data/raw/posts.json', analysis_attribute=attribute, use_gpu=True)
+    analyzer = Analyzer(in_path=in_file, analysis_attribute=attribute, use_gpu=True)
     analyzer.trajectory_analysis(score_threshold=1)
     print('...Analysis gathered...')
     analyzer.write_results_json('data/processed/results.json')
