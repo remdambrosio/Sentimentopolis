@@ -19,6 +19,8 @@ class Analyzer:
             model_name = 'cardiffnlp/twitter-roberta-base-sentiment'
         elif analysis_attribute == 'nsfwness':
             model_name = 'eliasalbouzidi/distilbert-nsfw-text-classifier'
+        elif analysis_attribute == 'saltiness':
+            model_name = 'bhadresh-savani/distilbert-base-uncased-emotion'
         self.sentiment_analyzer = pipeline('sentiment-analysis', model=model_name, device=device, truncation=True, max_length=511)
 
         self.results = []
@@ -70,6 +72,8 @@ class Analyzer:
             analysis_result = self.transformer_sentiment(text_batch)
         elif self.analysis_attribute == 'nsfwness':
             analysis_result = self.transformer_nsfwness(text_batch)
+        elif self.analysis_attribute == 'saltiness':
+            analysis_result = self.transformer_saltiness(text_batch)
         return analysis_result
     
 
@@ -99,6 +103,26 @@ class Analyzer:
             total += nsfwness
         avg_nsfwness = total / len(string_sentiments)
         return avg_nsfwness
+
+    def transformer_saltiness(self, text_batch):
+        """
+        Gets average saltiness of a list of strings
+        """
+        saltiness_weights = {
+            "anger": 1.0,
+            "frustration": 0.8,
+            "sadness": 0.5,
+            "neutral": 0,
+            "joy": -0.5
+        }
+        string_emotions = self.sentiment_analyzer(text_batch)
+        total_saltiness = 0
+        for entry in string_emotions:
+            emotion = entry['label']
+            saltiness = saltiness_weights.get(emotion, 0)
+            total_saltiness += saltiness
+        avg_saltiness = total_saltiness / len(string_emotions)
+        return avg_saltiness
 
 
     # I/O METHODS ==========================
